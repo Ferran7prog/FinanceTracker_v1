@@ -6,6 +6,7 @@ import { FileUp, Lock, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { processPdfFile } from "@/lib/pdf-parser";
+import { PDF_CONFIG } from "@/lib/config";
 
 interface UploadWidgetProps {
   onClose?: () => void;
@@ -56,10 +57,11 @@ export function UploadWidget({ onClose, showCloseButton = true }: UploadWidgetPr
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) { // 10MB
+    if (file.size > PDF_CONFIG.maxSizeBytes) {
+      const maxSizeMB = PDF_CONFIG.maxSizeBytes / (1024 * 1024);
       toast({
         title: "File too large",
-        description: "Please upload a file smaller than 10MB",
+        description: `Please upload a file smaller than ${maxSizeMB}MB`,
         variant: "destructive",
       });
       return;
@@ -176,7 +178,7 @@ export function UploadWidget({ onClose, showCloseButton = true }: UploadWidgetPr
               <p className="pl-1">or drag and drop</p>
             </div>
             <p className="text-xs text-gray-500">
-              Supported file: PDF up to 10MB
+              Supported file: PDF up to {PDF_CONFIG.maxSizeBytes / (1024 * 1024)}MB
             </p>
           </div>
         </div>

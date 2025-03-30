@@ -1,7 +1,8 @@
 import * as pdfjsLib from 'pdfjs-dist';
+import { PDF_CONFIG } from './config';
 
 // Initialize pdf.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_CONFIG.workerUrl;
 
 /**
  * Extracts text content from a PDF file

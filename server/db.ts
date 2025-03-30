@@ -5,10 +5,14 @@ const { Pool } = pkg;
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import * as schema from '@shared/schema';
 import { log } from './vite';
+import { DATABASE_CONFIG, validateConfig } from './config';
+
+// Validate all required environment variables
+validateConfig();
 
 // Initialize PostgreSQL connection pool
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: DATABASE_CONFIG.url,
 });
 
 // Initialize Drizzle ORM

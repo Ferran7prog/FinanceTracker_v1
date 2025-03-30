@@ -3,9 +3,16 @@ import { createServer, type Server } from "http";
 import { getStorage } from "./storage";
 import { insertTransactionSchema, insertMonthlySummarySchema, insertCategoryBreakdownSchema, categories } from "@shared/schema";
 import { z } from "zod";
+import { PDF_CONFIG } from './config';
+
 // Helper to parse PDF data from buffer
 async function extractPdfContent(pdfBuffer: Buffer): Promise<string> {
   try {
+    // Check buffer size against max allowed size
+    if (pdfBuffer.length > PDF_CONFIG.maxSizeBytes) {
+      throw new Error(`PDF file size (${pdfBuffer.length} bytes) exceeds maximum allowed size (${PDF_CONFIG.maxSizeBytes} bytes)`);
+    }
+    
     // Import pdf-parse dynamically to avoid issues with test files
     const pdfParse = require('pdf-parse');
     const data = await pdfParse(pdfBuffer);
