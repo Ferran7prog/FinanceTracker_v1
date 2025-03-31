@@ -9,8 +9,6 @@ import {
   User,
   Menu,
   X,
-  ListOrdered,
-  FileUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -28,8 +26,6 @@ export default function Sidebar() {
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: Home },
-    { href: "/transactions", label: "Transactions", icon: ListOrdered },
-    { href: "/upload", label: "Upload Statements", icon: FileUp },
     { href: "/reports", label: "Reports", icon: FileBarChart },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
