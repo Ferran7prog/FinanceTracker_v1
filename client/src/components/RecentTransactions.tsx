@@ -15,6 +15,7 @@ interface RecentTransactionsProps {
 export function RecentTransactions({ year, month }: RecentTransactionsProps) {
   const { data, isLoading, error } = useQuery({
     queryKey: [`/api/transactions/month/${year}/${month}`],
+    throwOnError: false, // Don't throw errors so we can handle empty months gracefully
   });
 
   const categoryOptions = categories.map(category => ({
@@ -107,7 +108,8 @@ export function RecentTransactions({ year, month }: RecentTransactionsProps) {
     return <RecentTransactionsSkeleton />;
   }
 
-  if (error) {
+  // Only show real errors, not empty data
+  if (error && error.message !== "Summary not found for this month") {
     return (
       <Card className="col-span-1 lg:col-span-3 bg-white shadow rounded-lg overflow-hidden">
         <CardHeader>
@@ -130,15 +132,21 @@ export function RecentTransactions({ year, month }: RecentTransactionsProps) {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <DataTable 
-          columns={columns} 
-          data={data || []} 
-          searchColumn="description"
-          filterColumn={{
-            key: "Categories",
-            options: categoryOptions,
-          }}
-        />
+        {Array.isArray(data) && data.length > 0 ? (
+          <DataTable 
+            columns={columns} 
+            data={data} 
+            searchColumn="description"
+            filterColumn={{
+              key: "Categories",
+              options: categoryOptions,
+            }}
+          />
+        ) : (
+          <div className="p-6 text-center">
+            <p className="text-gray-500">No transactions available for this month</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

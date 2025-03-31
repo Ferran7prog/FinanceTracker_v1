@@ -13,28 +13,29 @@ interface ExpenseCategoriesChartProps {
 export function ExpenseCategoriesChart({ year, month }: ExpenseCategoriesChartProps) {
   const { data, isLoading, error } = useQuery({
     queryKey: [`/api/summaries/${year}/${month}`],
+    // Don't throw on 404 errors since we want to display an empty chart for months with no data
+    throwOnError: false,
   });
 
   if (isLoading) {
     return <ExpenseCategoriesChartSkeleton />;
   }
 
-  if (error || !data || !data.breakdowns) {
-    return (
-      <Card className="bg-white overflow-hidden shadow rounded-lg">
-        <CardHeader>
-          <CardTitle className="text-lg font-medium text-gray-900">Expense Categories</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-52">
-            <p className="text-red-500">Failed to load category data</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  // Define type for breakdown
+  interface Breakdown {
+    category: string;
+    amount: number;
+    percentage: number;
   }
-
-  const { breakdowns } = data;
+  
+  // Use empty breakdowns array if there's no data (or no breakdowns)
+  const breakdowns: Breakdown[] = data && 
+    typeof data === 'object' && 
+    data !== null && 
+    'breakdowns' in data && 
+    Array.isArray(data.breakdowns)
+    ? data.breakdowns
+    : [];
   
   // Filter to only include expense categories with amounts > 0
   const expenseCategories = breakdowns
@@ -65,45 +66,53 @@ export function ExpenseCategoriesChart({ year, month }: ExpenseCategoriesChartPr
         <CardTitle className="text-lg font-medium text-gray-900">Expense Categories</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-52 relative mb-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={expenseCategories}
-                cx="50%"
-                cy="50%"
-                innerRadius={40}
-                outerRadius={70}
-                paddingAngle={2}
-                dataKey="value"
-              >
-                {expenseCategories.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="space-y-2">
-          {expenseCategories.map((category: any, index: number) => (
-            <div key={index} className="flex items-center justify-between text-sm">
-              <div className="flex items-center">
-                <div 
-                  className="h-3 w-3 rounded-full mr-2" 
-                  style={{ backgroundColor: category.color }}
-                ></div>
-                <span className="text-gray-700">{category.name}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-900">
-                  ${Number(category.value).toLocaleString()}
-                </span>
-                <span className="text-gray-500 ml-1">{category.percentage}%</span>
-              </div>
+        {expenseCategories.length > 0 ? (
+          <>
+            <div className="h-52 relative mb-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={expenseCategories}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={70}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {expenseCategories.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-          ))}
-        </div>
+            <div className="space-y-2">
+              {expenseCategories.map((category: any, index: number) => (
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center">
+                    <div 
+                      className="h-3 w-3 rounded-full mr-2" 
+                      style={{ backgroundColor: category.color }}
+                    ></div>
+                    <span className="text-gray-700">{category.name}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-900">
+                      ${Number(category.value).toLocaleString()}
+                    </span>
+                    <span className="text-gray-500 ml-1">{category.percentage}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-center h-52">
+            <p className="text-gray-500">No expense data available for this month</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
