@@ -16,11 +16,11 @@ export function SummaryCards({ year, month }: SummaryProps) {
 
   if (isLoading) {
     return (
-      <>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <SummaryCardSkeleton />
         <SummaryCardSkeleton />
         <SummaryCardSkeleton />
-      </>
+      </div>
     );
   }
 
@@ -40,7 +40,7 @@ export function SummaryCards({ year, month }: SummaryProps) {
   const balanceChange = 25.3; // Example value, would be dynamic in real implementation
 
   return (
-    <>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {/* Total Income Card */}
       <Card className="bg-white shadow rounded-lg overflow-hidden">
         <CardContent className="p-5">
@@ -142,7 +142,7 @@ export function SummaryCards({ year, month }: SummaryProps) {
           </div>
         </CardFooter>
       </Card>
-    </>
+    </div>
   );
 }
 
