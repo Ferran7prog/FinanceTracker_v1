@@ -1,6 +1,5 @@
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ArrowDown, ArrowUp, Wallet } from "lucide-react";
-import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -80,13 +79,6 @@ export function SummaryCards({ year, month }: SummaryProps) {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="bg-gray-50 px-5 py-3">
-          <div className="text-sm">
-            <Link href="/transactions" className="font-medium text-primary hover:text-primary/80">
-              View details <ArrowDown className="inline ml-1 h-3 w-3 rotate-90" />
-            </Link>
-          </div>
-        </CardFooter>
       </Card>
 
       {/* Total Expenses Card */}
@@ -114,13 +106,6 @@ export function SummaryCards({ year, month }: SummaryProps) {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="bg-gray-50 px-5 py-3">
-          <div className="text-sm">
-            <Link href="/transactions" className="font-medium text-primary hover:text-primary/80">
-              View details <ArrowDown className="inline ml-1 h-3 w-3 rotate-90" />
-            </Link>
-          </div>
-        </CardFooter>
       </Card>
 
       {/* Net Balance Card */}
@@ -148,13 +133,6 @@ export function SummaryCards({ year, month }: SummaryProps) {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="bg-gray-50 px-5 py-3">
-          <div className="text-sm">
-            <Link href="/transactions" className="font-medium text-primary hover:text-primary/80">
-              View details <ArrowDown className="inline ml-1 h-3 w-3 rotate-90" />
-            </Link>
-          </div>
-        </CardFooter>
       </Card>
     </div>
   );
@@ -175,9 +153,6 @@ function SummaryCardSkeleton() {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="bg-gray-50 px-5 py-3">
-        <Skeleton className="h-4 w-24" />
-      </CardFooter>
     </Card>
   );
 }
