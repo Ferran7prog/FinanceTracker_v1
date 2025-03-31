@@ -6,6 +6,8 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
+import TransactionHistory from "@/pages/TransactionHistory";
+import UploadStatements from "@/pages/UploadStatements";
 import Sidebar from "@/components/Sidebar";
 
 function Router() {
@@ -17,6 +19,8 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
+          <Route path="/transactions" component={TransactionHistory} />
+          <Route path="/upload" component={UploadStatements} />
           <Route component={NotFound} />
         </Switch>
       </div>
