@@ -1,6 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -26,7 +24,7 @@ export function MonthlyTrendsChart({ year, month }: MonthlyTrendsChartProps) {
   // Query to fetch monthly summaries for the last 6 months
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/summaries'],
-  });
+  }) as { data: any[], isLoading: boolean, error: any };
 
   if (isLoading) {
     return <MonthlyTrendsChartSkeleton />;
@@ -76,10 +74,7 @@ export function MonthlyTrendsChart({ year, month }: MonthlyTrendsChartProps) {
     };
   });
 
-  // Handle export
-  const handleExport = () => {
-    window.open(`/api/export/${year}/${month}`, '_blank');
-  };
+
 
   return (
     <Card className="col-span-1 lg:col-span-2 bg-white rounded-lg shadow">
@@ -143,18 +138,10 @@ export function MonthlyTrendsChart({ year, month }: MonthlyTrendsChartProps) {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-4 flex justify-between">
+        <div className="mt-4">
           <div className="text-sm text-gray-500">
             Last 6 months
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleExport}
-            className="text-sm font-medium rounded"
-          >
-            <Download className="mr-1.5 h-4 w-4" /> Export
-          </Button>
         </div>
       </CardContent>
     </Card>
@@ -176,9 +163,8 @@ function MonthlyTrendsChartSkeleton() {
       </CardHeader>
       <CardContent className="p-6">
         <Skeleton className="h-72 w-full rounded-lg" />
-        <div className="mt-4 flex justify-between">
+        <div className="mt-4">
           <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-8 w-24" />
         </div>
       </CardContent>
     </Card>
