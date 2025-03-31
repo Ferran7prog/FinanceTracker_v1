@@ -3,11 +3,21 @@ import { SummaryCards } from "@/components/SummaryCards";
 import { MonthlyTrendsChart } from "@/components/MonthlyTrendsChart";
 import { ExpenseCategoriesChart } from "@/components/ExpenseCategoriesChart";
 import { RecentTransactions } from "@/components/RecentTransactions";
-import { UploadWidget } from "@/components/UploadWidget";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Plus, Calendar } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight, Plus, Calendar, PencilIcon } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { insertTransactionSchema, categories } from "@shared/schema";
+import { format } from "date-fns";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -19,7 +29,10 @@ export default function Dashboard() {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth() + 1); // 1-12
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
-  const [showUploadWidget, setShowUploadWidget] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const isMobile = useIsMobile();
 
   // Check if there are any transactions for this month
@@ -27,8 +40,75 @@ export default function Dashboard() {
     queryKey: [`/api/transactions/month/${currentYear}/${currentMonth}`],
   });
 
-  // Display upload widget if no transactions
+  // Display message if no transactions
   const noTransactions = transactions.length === 0;
+
+  const formSchema = insertTransactionSchema.extend({
+    date: z.coerce.date(),
+    amount: z.coerce.number().min(0, "Amount must be positive"),
+    type: z.enum(["income", "expense"]),
+  });
+
+  const transactionForm = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      date: new Date(),
+      description: "",
+      category: "Other",
+      amount: 0,
+      type: "expense",
+    },
+  });
+
+  const handleAddTransaction = () => {
+    setSelectedTransaction(null);
+    
+    transactionForm.reset({
+      date: new Date(),
+      description: "",
+      category: "Other",
+      amount: 0,
+      type: "expense",
+    });
+    
+    setOpen(true);
+  };
+
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    try {
+      // Adjust amount based on type
+      const amount = data.type === "expense" ? -data.amount : data.amount;
+      const submitData = { ...data, amount };
+      
+      if (selectedTransaction) {
+        // Update existing transaction
+        await apiRequest('PUT', `/api/transactions/${selectedTransaction.id}`, submitData);
+        toast({
+          title: "Transaction updated",
+          description: "The transaction has been successfully updated",
+        });
+      } else {
+        // Create new transaction
+        await apiRequest('POST', '/api/transactions', submitData);
+        toast({
+          title: "Transaction added",
+          description: "The new transaction has been successfully added",
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/transactions/month/${currentYear}/${currentMonth}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/summaries'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/summaries/${currentYear}/${currentMonth}`] });
+      setOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save transaction",
+        variant: "destructive",
+      });
+    }
+  };
 
   const prevMonth = () => {
     if (currentMonth === 1) {
@@ -92,16 +172,21 @@ export default function Dashboard() {
                 </Button>
               </div>
               
-              {/* Upload button */}
-              {!noTransactions && (
-                <Button 
-                  size={isMobile ? "icon" : "default"}
-                  onClick={() => setShowUploadWidget(true)}
-                  className="ml-2"
-                >
-                  {isMobile ? <Plus className="h-4 w-4" /> : "Upload Statement"}
-                </Button>
-              )}
+              {/* Add Transaction button */}
+              <Button 
+                size={isMobile ? "icon" : "default"}
+                onClick={handleAddTransaction}
+                className="ml-2"
+              >
+                {isMobile ? (
+                  <Plus className="h-4 w-4" />
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-1" />
+                    <span>Add Transaction</span>
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
@@ -111,16 +196,6 @@ export default function Dashboard() {
       <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Upload Widget - shown conditionally */}
-          {(showUploadWidget || noTransactions) && (
-            <div className={`${isMobile ? "col-span-1" : "lg:col-span-3 md:col-span-2"}`}>
-              <UploadWidget 
-                onClose={() => setShowUploadWidget(false)}
-                showCloseButton={!noTransactions}
-              />
-            </div>
-          )}
-
           {/* Summary Cards */}
           <div className="lg:col-span-3 md:col-span-2">
             <SummaryCards year={currentYear} month={currentMonth} />
@@ -140,6 +215,119 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Add Transaction Dialog */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Transaction</DialogTitle>
+          </DialogHeader>
+          <Form {...transactionForm}>
+            <form onSubmit={transactionForm.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={transactionForm.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date</FormLabel>
+                    <FormControl>
+                      <div className="flex">
+                        <Calendar className="mr-2 h-4 w-4 opacity-50" />
+                        <Input 
+                          type="date" 
+                          value={field.value ? format(new Date(field.value), 'yyyy-MM-dd') : ''} 
+                          onChange={e => field.onChange(new Date(e.target.value))}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={transactionForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Grocery shopping" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={transactionForm.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map(category => (
+                          <SelectItem key={category} value={category}>{category}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={transactionForm.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          step="0.01" 
+                          placeholder="0.00" 
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={transactionForm.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="income">Income</SelectItem>
+                          <SelectItem value="expense">Expense</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <DialogFooter>
+                <Button type="submit">Save</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

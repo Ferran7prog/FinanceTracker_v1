@@ -4,8 +4,6 @@ import { cn } from "@/lib/utils";
 import {
   BarChart3,
   Home,
-  Upload,
-  TableIcon,
   FileBarChart,
   Settings,
   User,
@@ -28,8 +26,6 @@ export default function Sidebar() {
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: Home },
-    { href: "/upload", label: "Upload Statements", icon: Upload },
-    { href: "/transactions", label: "Transaction History", icon: TableIcon },
     { href: "/reports", label: "Reports", icon: FileBarChart },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
